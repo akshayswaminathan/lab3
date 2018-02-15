@@ -56,7 +56,8 @@ be any of the following options: red, crimson, orange, yellow, green,
 blue, indigo, or violet.
 ......................................................................*)
 
-type color_label = NotImplemented ;;
+type color_label = Red | Crimson | Orange | 
+                   Yellow | Green | Blue | Indigo | Violet ;;
 
 (* You've just defined a new variant type! But this is an overly
 simplistic representation of colors. Let's make it more usable.
@@ -91,7 +92,7 @@ channels. You'll want to use Simple and RGB as the value constructors
 in this new variant type.
 ......................................................................*)
 
-type color = NotImplemented ;;
+type color = Simple of color_label | RGB of (int * int * int);;
 
 (* Note that there is an important assumption about the RGB values
 that determine whether a color is valid or not. The RGB type contains
@@ -117,17 +118,24 @@ an Invalid_Color exception with a useful message.
 
 exception Invalid_Color of string ;;
 
-let valid_rgb = 
-  fun _ -> failwith "valid_rgb not implemented" ;;
+let valid_rgb col = 
+  match col with
+  | Simple simpcol -> Simple simpcol
+  | RGB (r, g, b) -> 
+  let range x = (x >= 0 && x <= 255) in
+    if (range r && range g && range b) then RGB (r, g, b) 
+    else raise (Invalid_Color "fail");; 
+
 
 (*......................................................................
 Exercise 3: Write a function, make_color, that accepts three integers
 for the channel values and returns a value of the color type. Be sure
-to verify the invariant.
+to verify the invariant
 ......................................................................*)
 
-let make_color = 
-  fun _ -> failwith "make_color not implemented" ;;
+let make_color (r : int) (g : int) (b : int) : color = valid_rgb (RGB (r, g, b)) ;;
+
+
 
 (*......................................................................
 Exercise 4: Write a function, convert_to_rgb, that accepts a color and
@@ -205,7 +213,7 @@ should be. Then, consider the implications of representing the overall
 data type as a tuple or a record.
 ......................................................................*)
 
-type date = NotImplemented ;;
+type date = {year: int; month: int; day: int} ;;
 
 (* After you've thought it through, look up the Date module in the
 OCaml documentation to see how this was implemented there. If you
@@ -240,6 +248,11 @@ The invariants are as follows:
 You may find Wikipedia's leap year algorithm pseudocode useful:
 https://en.wikipedia.org/wiki/Leap_year#Algorithm
 
+if (year is not divisible by 4) then (it is a common year)
+else if (year is not divisible by 100) then (it is a leap year)
+else if (year is not divisible by 400) then (it is a common year)
+else (it is a leap year)
+
 ........................................................................
 Exercise 9: Create a valid_date function that raises Invalid_Date if
 the invariant is violated, and returns the date if valid.
@@ -247,8 +260,21 @@ the invariant is violated, and returns the date if valid.
 
 exception Invalid_Date of string ;;
 
-let valid_date = 
-  fun _ -> failwith "valid_date not implemented" ;;
+let leapcheck y = 
+  if (y mod 4 != 0) then false
+  else if (y mod 100 != 0) then true
+  else if (y mod 400 != 0) then false
+  else true ;;
+
+
+let valid_date (input : date) = 
+  match input with
+  {year = y; month = m; day = d} ->
+  if (y < 0 || m < 0 || d < 0) || 
+     ((m = 1 || m = 3 || m = 5 || m = 7 || m = 8 || m = 10 || m = 12) && d > 31) ||
+     ((m = 4 || m = 6 || m = 9 || m = 11) && d > 30) || m > 12 || 
+     (leapcheck y && d > 29) || (not (leapcheck y) && d > 28) then raise (Invalid_Date "wrong")
+  else input ;;
 
 
 (*======================================================================
@@ -262,7 +288,7 @@ Exercise 10: Define a person record type. Use the field names "name",
 "favorite", and "birthdate".
 ......................................................................*)
 
-type person = NotImplemented ;;
+type person = {name : string; favorite : color; birthdate : date} ;;
 
 (* Let's now do something with these person values. We'll create a
 data structure that allows us to model simple familial relationships.
@@ -301,9 +327,10 @@ ensure the invariants are preserved for color and date, use them here
 as well.
 ......................................................................*)
 
-let new_child = 
-  fun _ -> failwith "new_child not implemented" ;;
+let new_child (n : string) (c : color) (d : date) =
+  Single {name = n; favorite = (valid_rgb c); birthdate = (valid_date d)} ;;
 
+new_child "Joe" (Simple Red) {year = 2018; month = 12; day = 2};;
 (*......................................................................
 Exercise 12: Write a function that allows a person to marry in to a
 family, by accepting a family and a person, and returning a new and
